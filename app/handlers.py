@@ -1,7 +1,8 @@
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery
 from aiogram import F, Router
-import app.keyboards as kb 
+import app.keyboards as kb
+from aiogram.fsm.context import FSMContext
 
 router = Router()
 
@@ -16,17 +17,12 @@ async def to_projects_inline(callback: CallbackQuery):
     await callback.message.edit_text("Выберите действие:", reply_markup=kb.projects)
     await callback.answer()
 
-#Create_Project
-
-#@router.callback_query(F.data == "create_project")
-#async def to_create_project_inline(callback: CallbackQuery):
-   # await callback.message.edit_text("Придумайте название проекта", reply_markup=kb.projects)
- #   await callback.answer()
-
 #Profile
 
 @router.callback_query(F.data == "user_profile")
-async def to_profile_inline(callback: CallbackQuery):
+async def to_profile_inline(callback: CallbackQuery, state: FSMContext):
+    if state:
+        await state.clear()
     await callback.message.edit_text("Выберите действие:", reply_markup=kb.profile)
     await callback.answer()
 
@@ -40,8 +36,3 @@ async def get_help(message: Message):
 async def back_to_main_inline(callback: CallbackQuery):
     await callback.message.edit_text("Вы вернулись в главное меню", reply_markup=kb.main)
     await callback.answer()
-
-@router.callback_query(F.data == "sosiska")
-async def get_help(callback: CallbackQuery):
-    await callback.answer("")
-    await callback.message.edit_text("Сосо")
