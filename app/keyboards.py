@@ -44,3 +44,8 @@ test = InlineKeyboardMarkup(
         [InlineKeyboardButton(text="Назад", callback_data="back_to_main")],
     ]
 )
+create_project = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text='Введите название проекта',callback_data='create_project')],
+    ]
+)

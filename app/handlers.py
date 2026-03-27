@@ -7,7 +7,7 @@ router = Router()
 
 @router.message(CommandStart())
 async def handle_start(message: Message):
-    await message.answer("Добро пожаловать!", reply_markup=kb.main)
+    await message.answer("Code Team Helper — ваш помощник в мире разработки. Бот помогает находить проекты под ваш стек технологий, собирать команду для собственных идей, управлять задачами и документацией", reply_markup=kb.main)
 
 #Projects
 
@@ -15,6 +15,13 @@ async def handle_start(message: Message):
 async def to_projects_inline(callback: CallbackQuery):
     await callback.message.edit_text("Выберите действие:", reply_markup=kb.projects)
     await callback.answer()
+
+#Create_Project
+
+#@router.callback_query(F.data == "create_project")
+#async def to_create_project_inline(callback: CallbackQuery):
+   # await callback.message.edit_text("Придумайте название проекта", reply_markup=kb.projects)
+ #   await callback.answer()
 
 #Profile
 
