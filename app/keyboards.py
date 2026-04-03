@@ -37,6 +37,12 @@ projects = InlineKeyboardMarkup(
     ]
 )
 
+back_to_main = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Назад", callback_data="back_to_main")]
+    ]
+)
+
 #Profile change
 
 create_profile = InlineKeyboardMarkup(

@@ -28,9 +28,12 @@ async def to_profile_inline(callback: CallbackQuery, state: FSMContext):
 
 #Help
 
-@router.message(F.text == "❓ Помощь")
-async def get_help(message: Message):
-    await message.answer("")
+@router.callback_query(F.data == "help_menu")
+async def back_to_main_inline(callback: CallbackQuery):
+    await callback.message.edit_text("Это меню информации!", reply_markup=kb.back_to_main)
+    await callback.answer()
+
+#Back_to_main
 
 @router.callback_query(F.data == "back_to_main")
 async def back_to_main_inline(callback: CallbackQuery):
