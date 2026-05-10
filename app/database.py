@@ -111,6 +111,27 @@ def save_project(creator_id: int, creator_nick: str, name: str, description: str
     return project_id
 
 
+def get_project_by_id(project_id: int) -> Optional[dict]:
+    """Получить проект по его id"""
+    conn = sqlite3.connect(DB_PROJECTS)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row is None:
+        return None
+    return {
+        "id": row[0],
+        "creator_id": row[1],
+        "creator_nick": row[2],
+        "name": row[3],
+        "description": row[4],
+        "requirements": row[5],
+        "status": row[6],
+        "created_at": row[7],
+    }
+
+
 def get_projects_by_user(user_id: int) -> list:
     """Получить все проекты пользователя"""
     conn = sqlite3.connect(DB_PROJECTS)
@@ -153,3 +174,26 @@ def get_all_projects() -> list:
             "created_at": row[7],
         })
     return projects
+
+
+def update_project(project_id: int, name: str, description: str, requirements: list) -> None:
+    """Обновить данные проекта"""
+    conn = sqlite3.connect(DB_PROJECTS)
+    cursor = conn.cursor()
+    req_text = ", ".join(requirements) if requirements else ""
+    cursor.execute("""
+        UPDATE projects
+        SET name = ?, description = ?, requirements = ?
+        WHERE id = ?
+    """, (name, description, req_text, project_id))
+    conn.commit()
+    conn.close()
+
+
+def delete_project(project_id: int) -> None:
+    """Удалить проект (или пометить как удалённый)"""
+    conn = sqlite3.connect(DB_PROJECTS)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE projects SET status = 'deleted' WHERE id = ?", (project_id,))
+    conn.commit()
+    conn.close()

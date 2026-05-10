@@ -25,12 +25,12 @@ profile = InlineKeyboardMarkup(
 projects = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text="Мои проекты", callback_data="test"), 
-            InlineKeyboardButton(text="Создать проект", callback_data="create_project")
+            InlineKeyboardButton(text="📋 Мои проекты", callback_data="my_projects"),
+            InlineKeyboardButton(text="🚀 Создать проект", callback_data="create_project")
         ],
         [
-            InlineKeyboardButton(text="Поиск по проектам", callback_data="test"),
-            InlineKeyboardButton(text="Рекомендации", callback_data="test")
+            InlineKeyboardButton(text="🔍 Поиск по проектам", callback_data="search_projects"),
+            InlineKeyboardButton(text="⭐ Рекомендации", callback_data="recommendations")
         ],
         [
             InlineKeyboardButton(text="Назад", callback_data="back_to_main")
@@ -41,6 +41,12 @@ projects = InlineKeyboardMarkup(
 back_to_main = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Назад", callback_data="back_to_main")]
+    ]
+)
+
+back_to_projects = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="🔙 Назад к проектам", callback_data="projects_menu")]
     ]
 )
 
@@ -95,52 +101,64 @@ user_variant = custom_skill_step
 # === Project Creation keyboards ===
 
 # Шаг 1: Введите название проекта
-# Кнопка "Назад" возвращает на главный экран
 project_name_step = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text='← Назад к меню', callback_data='back_to_main')],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="projects_menu")]
     ]
 )
 
 # Шаг 2: Введите описание проекта
-# Кнопка "Назад" возвращает к шагу 1 (ввода названия)
 project_description_step = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text='← Назад к названию', callback_data='project_back_to_name')],
-    ]
-)
-
-# Шаг 3: Выберите технологии из профиля
-# Кнопка "Назад" возвращает к шагу 2 (ввода описания)
-project_requirements_step = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [InlineKeyboardButton(text='← Назад к описанию', callback_data='project_back_to_description')],
-    ]
-)
-
-# Кнопка "Завершено" — вернуться на главный экран
-project_complete = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [InlineKeyboardButton(text='✅ Завершено', callback_data='project_complete')],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="project_back_to_name")]
     ]
 )
 
 
-# --- Остальные ваши клавиатуры (main, projects, profile, back_to_main и т.д.) ---
+# === Project Detail & Edit keyboards ===
 
-project_name_step = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="🔙 Назад", callback_data="projects_menu")]
-])
+def get_project_detail_keyboard(project_id: int, is_owner: bool = False):
+    """Клавиатура для просмотра деталей проекта"""
+    buttons = []
+    if is_owner:
+        buttons.append([
+            InlineKeyboardButton(text="✏️ Редактировать", callback_data=f"edit_project_{project_id}"),
+            InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete_project_{project_id}")
+        ])
+    buttons.append([
+        InlineKeyboardButton(text="🔙 Назад к списку", callback_data="my_projects")
+    ])
+    buttons.append([
+        InlineKeyboardButton(text="🔙 В меню проектов", callback_data="projects_menu")
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-project_description_step = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="🔙 Назад", callback_data="project_back_to_name")]
-])
 
-# Клавиатура для меню профиля (навыки + уровень)
+# Клавиатура для шага выбора, что редактировать в проекте
+def get_edit_project_choice_keyboard(project_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📌 Название", callback_data=f"edit_name_{project_id}")],
+            [InlineKeyboardButton(text="📝 Описание", callback_data=f"edit_desc_{project_id}")],
+            [InlineKeyboardButton(text="🛠 Технологии", callback_data=f"edit_reqs_{project_id}")],
+            [InlineKeyboardButton(text="✅ Завершить редактирование", callback_data=f"finish_edit_{project_id}")],
+        ]
+    )
+
+
+# Клавиатура для шага редактирования названия — назад к выбору поля
+def edit_back_to_choice_keyboard(project_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🔙 Назад к выбору", callback_data=f"show_edit_menu_{project_id}")]
+        ]
+    )
+
+
+# === Profile skills keyboard (used during project creation) ===
 def get_profile_skills_keyboard(skills, rank):
     buttons = []
     if skills and skills != "Нет данных":
-        # Предполагаем, что навыки могут быть списком или строкой
         skill_list = skills if isinstance(skills, list) else skills.split(", ")
         for skill in skill_list:
             skill = skill.strip()
@@ -156,7 +174,6 @@ def get_profile_skills_keyboard(skills, rank):
             callback_data=f"add_rank_{rank}"
         )])
         
-    # Если вообще нет данных
     if not buttons:
         buttons.append([InlineKeyboardButton(
             text="❌ Профиль не заполнен", 
@@ -165,7 +182,8 @@ def get_profile_skills_keyboard(skills, rank):
         
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-# Клавиатура для быстрого выбора технологий (популярные)
+
+# === Popular techs for requirements ===
 POPULAR_TECHS = [
     ("🐍 Python", "pop_tech_python"),
     ("📜 JavaScript", "pop_tech_javascript"),
@@ -176,10 +194,9 @@ POPULAR_TECHS = [
     ("🎨 Figma", "pop_tech_figma"),
 ]
 
+
 def get_tech_requirements_keyboard():
     inline_keyboard = []
-    
-    # Разбиваем кнопки на ряды по 2
     row = []
     for text, callback in POPULAR_TECHS:
         row.append(InlineKeyboardButton(text=text, callback_data=callback))
@@ -189,7 +206,6 @@ def get_tech_requirements_keyboard():
     if row:
         inline_keyboard.append(row)
     
-    # Кнопка завершения
     inline_keyboard.append([
         InlineKeyboardButton(text="✅ Завершить создание проекта", callback_data="complete_project")
     ])
