@@ -3,6 +3,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram import F, Router
 import app.keyboards as kb
+from app.database import save_profile, get_profile, profile_exists
 
 profile_router = Router()
 
@@ -12,6 +13,36 @@ class Profile(StatesGroup):
     skills = State()
     custom_skill = State()
     rank = State()
+
+
+# Просмотр профиля — читаем из БД
+@profile_router.callback_query(F.data == "view_profile")
+async def view_profile(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    profile = get_profile(user_id)
+
+    if profile is None:
+        await callback.message.edit_text(
+            "❌ У вас ещё нет профиля. Заполните его в разделе «Изменить данные профиля».",
+            reply_markup=kb.back_to_main
+        )
+        await callback.answer()
+        return
+
+    text = (
+        f"👤 *Ваш профиль*\n\n"
+        f"🆔 ID: `{profile['user_id']}`\n"
+        f"📝 Имя: {profile['name']}\n"
+        f"💻 Навыки: {profile['skills']}\n"
+        f"📊 Уровень: {profile['rank']}\n"
+        f"📅 Создан: {profile['created_at']}"
+    )
+    await callback.message.edit_text(
+        text,
+        parse_mode="Markdown",
+        reply_markup=kb.profile
+    )
+    await callback.answer()
 
 
 # Старт заполнения профиля — шаг 1: ввод имени
@@ -88,7 +119,7 @@ async def process_custom_skill(message: Message, state: FSMContext):
     )
 
 
-# Шаг 3: выбор уровня — финальный экран с кнопкой возврата в главное меню
+# Шаг 3: выбор уровня — финальный экран с сохранением в БД
 @profile_router.callback_query(Profile.rank)
 async def process_rank(callback: CallbackQuery, state: FSMContext):
     button_text = "Неизвестно"
@@ -100,8 +131,21 @@ async def process_rank(callback: CallbackQuery, state: FSMContext):
 
     await state.update_data(rank=button_text)
     data = await state.get_data()
+
+    user_id = callback.from_user.id
+    tg_username = callback.from_user.username or ""
+
+    # Сохраняем профиль в БД
+    save_profile(
+        user_id=user_id,
+        tg_username=tg_username,
+        name=data.get("name", ""),
+        skills=data.get("skills", ""),
+        rank=data.get("rank", ""),
+    )
+
     await callback.message.edit_text(
-        f"✅ Ваш профиль успешно заполнен!\n\n"
+        f"✅ Ваш профиль успешно заполнен и сохранён!\n\n"
         f"Имя: {data['name']}\n"
         f"Навыки: {data['skills']}\n"
         f"Уровень: {data['rank']}",
